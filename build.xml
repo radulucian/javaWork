@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<project name="build-tests" default="run-all-tests" basedir=".">
+
+	<!-- set global properties for this build -->
+	<property name="jmeter.home" value="C:/apache-jmeter-2.10" />		
+	<property file="build.properties"/>	
+
+    <path id="jmeter.path">
+    	<fileset dir="." includes="ant-jmeter-1.1.1.jar"/> 
+    </path> 
+
+    <!-- trigger the cleanup job -->
+    <target name="cleanup" description="Clean the workspace" >
+    	<echo message="==== CLEAN WORKSPACE ====" />
+		<delete dir="${target.dir}" quiet="true" failonerror="false"/>    
+		<delete dir="${intermediate.dir}" quiet="true" failonerror="false"/>   
+		<delete dir="${report.dir}" quiet="true" failonerror="false"/>   
+  	</target>
+
+  	<!-- trigger the main job, is dependent by the cleanup -->
+	<target name="run-jmeter" description="Compile JMeter Script">
+		<echo message="==== JMETER TEST - BEGIN ====" />
+		<taskdef name="jmeter" classname="org.programmerplanet.ant.taskdefs.jmeter.JMeterTask" classpathref="jmeter.path" />
+	  	<jmeter
+		     jmeterhome="${jmeter.home}"
+			 resultlog="${intermediate.dir}/JMeterResults.jtl">
+			 <property name="request.threads" value="1"/>
+			 <property name="request.loop" value="1"/>
+			 <property name="jmeter.save.saveservice.assertion_results" value="all"/>
+			 <property name="jmeter.save.saveservice.output_format" value="xml"/>
+			 <testplans dir="${basedir}" includes="JMeterFunctionalTests.jmx"/>
+		</jmeter>
+	  	<echo message="==== JMETER TEST - END ====" />
+	</target>
+
+	<!-- Extract results for HTML report -->
+	<target name="create-html-report" description="Extract results for HTML report" >
+  		<echo message="==== EXTRACT FILES FOR HTML REPORT ====" />
+  		<xslt in="${intermediate.dir}/JMeterResults.jtl" 
+  			  out="${target.dir}/index.html" 
+  			  style="${basedir}/jmeter-results-detail-report_21.xsl"/>
+  	</target>
+
+  	<!-- Extract results for Junit report -->
+	<target name="create-junit-report" description="Extract results for Junit report" >
+	  	<echo message="==== EXTRACT FILES FOR JUNIT REPORT ====" />
+	  	<xslt in="${intermediate.dir}/JMeterResults.jtl"
+	    	  out="${target.dir}/JMeterResults.xml"
+		      style="${basedir}/jmeter-to-junit.xsl"/>
+  	</target>
+
+  	<target name="run-all-tests" depends="cleanup,run-jmeter,create-html-report,create-junit-report" description="Run all tests including dependencies" >
+  	</target>
+
+</project>
